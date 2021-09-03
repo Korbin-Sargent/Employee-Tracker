@@ -1,0 +1,14 @@
+{
+  "name": "employee-tracker",
+  "version": "1.0.0",
+  "description": "Emplopyee Tracking System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "inquirer": "^8.1.2",
+    "console.table": "^0.10.0",
+    "mysql2": "^2.2.5"
+  }
+}
