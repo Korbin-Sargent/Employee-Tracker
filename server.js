@@ -53,7 +53,7 @@ async function startPrompt() {
       break;
 
     case "Add a department":
-      viewEmployees();
+      addDepartment();
       break;
 
     case "Add a role":
@@ -65,7 +65,7 @@ async function startPrompt() {
       break;
 
     case "Update an employee role":
-      viewEmployees();
+      updateEmployeeRole();
       break;
   }
 }
@@ -163,6 +163,18 @@ function addEmployeesToDb(first_name, last_name, role_id, manager_id) {
     role_id: role_id,
     manager_id: manager_id,
   });
+}
+
+function addDepartmentToDb(name) {
+  return connection.promise().query("INSERT INTO department SET ?", {
+    name: name,
+  });
+}
+
+function updateEmpRoleDb(role_id, id) {
+  return connection
+    .promise()
+    .query("UPDATE employee SET role_id = ? WHERE id = ?;", [role_id, id]);
 }
 
 async function addEmployee() {
@@ -266,5 +278,59 @@ async function addRole() {
 
   await addRoleToDb(newRole.role, newRole.salary, departmentId);
   console.log(`added ${newRole.role} to the database.`);
+  startPrompt();
+}
+
+async function addDepartment() {
+  const newDepartment = await inquirer.prompt({
+    name: "name",
+    type: "input",
+    message: "What department would you like to add?",
+  });
+
+  await addDepartmentToDb(newDepartment.name);
+  console.log(`Added ${newDepartment.name} to the database.`);
+  startPrompt();
+}
+
+async function updateEmployeeRole() {
+  const [employees] = await getEmployees();
+  const employeeList = employees.map((employee) => {
+    return employee.first_name + " " + employee.last_name;
+  });
+  const [roles] = await getRoles();
+  const roleList = roles.map((role) => {
+    return role.title;
+  });
+
+  updatedEmployee = await inquirer.prompt([
+    {
+      name: "name",
+      type: "list",
+      message: "Which employee do you want to update?",
+      choices: employeeList,
+    },
+    {
+      name: "role",
+      type: "list",
+      message: "What is the employee's updated role?",
+      choices: roleList,
+    },
+  ]);
+
+  const employeeData = employees.find(
+    (userInput) =>
+      updatedEmployee.name === userInput.first_name + " " + userInput.last_name
+  );
+  const employeeId = employeeData.id;
+
+  const roleData = roles.find(
+    (userInput) => userInput.title === updatedEmployee.role
+  );
+  const roleId = roleData.id;
+
+  await updateEmpRoleDb(roleId, employeeId);
+
+  console.log(`Updated ${updatedEmployee.name} role in the database.`);
   startPrompt();
 }
