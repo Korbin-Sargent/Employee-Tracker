@@ -31,31 +31,6 @@ const question = {
   choices: actionQuestions,
 };
 
-// const newEmployeeQuestion = [
-//   {
-//     name: "firstName",
-//     type: "input",
-//     message: "What is the employee's first name?",
-//   },
-//   {
-//     name: "lastName",
-//     type: "input",
-//     message: "What is the employee's last name?",
-//   },
-//   {
-//     name: "role",
-//     type: "choice",
-//     message: "What is the employee's role?",
-//     choices: roles,
-//   },
-//   {
-//     name: "manager",
-//     type: "choice",
-//     message: "Who is the employee's manager?",
-//     choices: managers,
-//   },
-// ];
-
 connection.connect((err) => {
   if (err) throw err;
   console.log("connection successful");
@@ -82,7 +57,7 @@ async function startPrompt() {
       break;
 
     case "Add a role":
-      viewEmployees();
+      addRole();
       break;
 
     case "Add an employee":
@@ -150,13 +125,8 @@ function getEmployees() {
   );
 }
 
-function addEmployeesToDb(first_name, last_name, role_id, manager_id) {
-  return connection.promise().query("INSERT INTO employee SET ?", {
-    first_name: first_name,
-    last_name: last_name,
-    role_id: role_id,
-    manager_id: manager_id,
-  });
+function getDepartments() {
+  return connection.promise().query(`SELECT id, name FROM department`);
 }
 
 async function viewAllDepartments() {
@@ -176,6 +146,23 @@ async function viewAllRoles() {
   const [roles] = await getAllRoles();
   console.table(roles);
   startPrompt();
+}
+
+function addRoleToDb(role, salary, departmentId) {
+  return connection.promise().query("INSERT INTO role SET ?", {
+    title: role,
+    salary: salary,
+    department_id: departmentId,
+  });
+}
+
+function addEmployeesToDb(first_name, last_name, role_id, manager_id) {
+  return connection.promise().query("INSERT INTO employee SET ?", {
+    first_name: first_name,
+    last_name: last_name,
+    role_id: role_id,
+    manager_id: manager_id,
+  });
 }
 
 async function addEmployee() {
@@ -244,5 +231,40 @@ async function addEmployee() {
 
   console.log(`Added ${newEmployee.firstName} to the database.`);
   // return connection.query(`INSERT INTO employee SET ?`, {first_name: first_name, last_name: last_name, role_id: role_id, manager_id: manager_id})
+  startPrompt();
+}
+
+async function addRole() {
+  const [departments] = await getDepartments();
+  console.log(departments);
+  const departmentsList = departments.map((department) => {
+    return department.name;
+  });
+  const newRole = await inquirer.prompt([
+    {
+      name: "role",
+      type: "input",
+      message: "What role would you like to add?",
+    },
+    {
+      name: "salary",
+      type: "input",
+      message: "What is the salary for this role?",
+    },
+    {
+      name: "department",
+      type: "list",
+      message: "What department does this role belong to?",
+      choices: departmentsList,
+    },
+  ]);
+
+  const departmentData = departments.find(
+    (userInput) => (newRole.role = userInput.name)
+  );
+  let departmentId = departmentData.id;
+
+  await addRoleToDb(newRole.role, newRole.salary, departmentId);
+  console.log(`added ${newRole.role} to the database.`);
   startPrompt();
 }
