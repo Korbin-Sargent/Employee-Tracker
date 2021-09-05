@@ -7,8 +7,9 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "inquirer": "^8.1.2",
+    "cfonts": "^2.9.3",
     "console.table": "^0.10.0",
+    "inquirer": "^8.1.2",
     "mysql2": "^2.2.5"
   }
 }
