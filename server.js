@@ -22,6 +22,7 @@ const actionQuestions = [
   "Add a role",
   "Add an employee",
   "Update an employee role",
+  "Delete an employee",
   "Exit",
 ];
 
@@ -83,6 +84,9 @@ function init() {
 
       case "Update an employee role":
         updateEmployeeRole();
+        break;
+      case "Delete an employee":
+        deleteEmployee();
         break;
       case "Exit":
         process.exit();
@@ -196,6 +200,12 @@ function init() {
       .query("UPDATE employee SET role_id = ? WHERE id = ?;", [role_id, id]);
   }
 
+  function deleteEmployeeDb(first_name) {
+    return connection
+      .promise()
+      .query("DELETE FROM employee WHERE first_name = ?;", first_name);
+  }
+
   async function addEmployee() {
     //prompt first name, lastname, role(from list of roles), managerid(list out managers)
     const [roles] = await getRoles();
@@ -292,9 +302,11 @@ function init() {
     ]);
 
     const departmentData = departments.find(
-      (userInput) => (newRole.role = userInput.name)
+      (userInput) => newRole.department === userInput.name
     );
     let departmentId = departmentData.id;
+    console.log(newRole.role);
+    console.log(departmentId);
 
     await addRoleToDb(newRole.role, newRole.salary, departmentId);
     console.log(`added ${newRole.role} to the database.`);
@@ -323,7 +335,7 @@ function init() {
       return role.title;
     });
 
-    updatedEmployee = await inquirer.prompt([
+    const updatedEmployee = await inquirer.prompt([
       {
         name: "name",
         type: "list",
@@ -353,6 +365,33 @@ function init() {
     await updateEmpRoleDb(roleId, employeeId);
 
     console.log(`Updated ${updatedEmployee.name} role in the database.`);
+    startPrompt();
+  }
+
+  async function deleteEmployee() {
+    const [employees] = await getEmployees();
+    const employeeList = employees.map((employee) => {
+      return employee.first_name + " " + employee.last_name;
+    });
+
+    const deletedEmployee = await inquirer.prompt([
+      {
+        name: "name",
+        type: "list",
+        message: "Which employee do you want to delete",
+        choices: employeeList,
+      },
+    ]);
+    const employeeData = employees.find(
+      (userInput) =>
+        deletedEmployee.name ===
+        userInput.first_name + " " + userInput.last_name
+    );
+    console.log(employeeData.first_name);
+    let employeeName = employeeData.first_name;
+    console.log(employeeName);
+    await deleteEmployeeDb(employeeName);
+    console.log(`Deleted ${deletedEmployee.name} from the database.`);
     startPrompt();
   }
 }
