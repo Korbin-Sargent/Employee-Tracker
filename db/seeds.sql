@@ -1,10 +1,10 @@
 USE employee_db;
 
-INSERT INTO department(dept_name) VALUES ("Executives");
-INSERT INTO department(dept_name) VALUES ("Directors");
-INSERT INTO department(dept_name) VALUES ("Manager");
-INSERT INTO department(dept_name) VALUES ("Employee");
-INSERT INTO department(dept_name) VALUES ("Intern");
+INSERT INTO department(name) VALUES ("Executives");
+INSERT INTO department(name) VALUES ("Directors");
+INSERT INTO department(name) VALUES ("Manager");
+INSERT INTO department(name) VALUES ("Employee");
+INSERT INTO department(name) VALUES ("Intern");
 
 
 INSERT INTO role(title, salary, department_id) VALUES ("CEO", 350000, 1 );

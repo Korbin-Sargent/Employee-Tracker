@@ -13,21 +13,48 @@ const connection = mysql.createConnection({
   database: "employee_db",
 });
 
+const actionQuestions = [
+  "View all departments",
+  "View all roles",
+  "View all employees",
+  "Add a department",
+  "Add a role",
+  "Add an employee",
+  "Update an employee role",
+  "Exit",
+];
+
 const question = {
   type: "list",
   name: "action",
   message: "What action would you like to take?",
-  choices: [
-    "View all departments",
-    "View all roles",
-    "View all employees",
-    "Add a department",
-    "Add a role",
-    "Add an employee",
-    "Update an employee role",
-    "Exit",
-  ],
+  choices: actionQuestions,
 };
+
+// const newEmployeeQuestion = [
+//   {
+//     name: "firstName",
+//     type: "input",
+//     message: "What is the employee's first name?",
+//   },
+//   {
+//     name: "lastName",
+//     type: "input",
+//     message: "What is the employee's last name?",
+//   },
+//   {
+//     name: "role",
+//     type: "choice",
+//     message: "What is the employee's role?",
+//     choices: roles,
+//   },
+//   {
+//     name: "manager",
+//     type: "choice",
+//     message: "Who is the employee's manager?",
+//     choices: managers,
+//   },
+// ];
 
 connection.connect((err) => {
   if (err) throw err;
@@ -47,7 +74,7 @@ async function startPrompt() {
       break;
 
     case "View all employees":
-      viewEmployees();
+      viewAllEmployees();
       break;
 
     case "Add a department":
@@ -59,7 +86,7 @@ async function startPrompt() {
       break;
 
     case "Add an employee":
-      viewEmployees();
+      addEmployee();
       break;
 
     case "Update an employee role":
@@ -68,41 +95,154 @@ async function startPrompt() {
   }
 }
 
-function showDepartments() {
+function getAllDepartments() {
   return connection
     .promise()
-    .query("SELECT id, dept_name AS Departments FROM department ORDER BY id")
-    .then(([data]) => {
-      console.table(data);
-    })
-    .catch();
+    .query("SELECT id, name AS Departments FROM department ORDER BY id");
+}
+
+function getAllEmployees() {
+  return connection.promise().query(
+    `
+      SELECT 
+        employee.id AS 'Employee ID', 
+        employee.first_name AS 'First Name',
+        employee.last_name AS 'Last Name',  
+        role.title AS 'Job Title',
+        role.salary AS Salary, 
+        department.name AS Department,
+      CONCAT(manager.first_name,' ', manager.last_name) AS Manager  
+      FROM employee
+      JOIN role ON role.id = employee.role_id 
+      JOIN department ON department.id = role.department_id
+      LEFT JOIN employee manager
+      ON manager.id = employee.manager_id
+      ORDER BY employee.id`
+  );
+}
+
+function getAllRoles() {
+  return connection.promise().query(
+    `
+      SELECT 
+        role.id AS 'Role ID', 
+        role.title AS 'Job Title', 
+        role.salary AS Salary, 
+        department.name AS Department 
+      FROM role
+      JOIN department ON department.id = role.department_id 
+      ORDER BY role.id`
+  );
+}
+
+function getRoles() {
+  return connection.promise().query(`SELECT id, title FROM role`);
+}
+
+function getEmployees() {
+  return connection.promise().query(
+    `
+      SELECT
+        id,
+        first_name,
+        last_name  
+      FROM employee`
+  );
+}
+
+function addEmployeesToDb(first_name, last_name, role_id, manager_id) {
+  return connection.promise().query("INSERT INTO employee SET ?", {
+    first_name: first_name,
+    last_name: last_name,
+    role_id: role_id,
+    manager_id: manager_id,
+  });
 }
 
 async function viewAllDepartments() {
-  await showDepartments();
+  const [departments] = await getAllDepartments();
+  console.table(departments);
   startPrompt();
 }
 
-function showRoles() {
-  return connection
-    .promise()
-    .query(
-      "SELECT id AS 'Role ID', title AS 'Job Title', salary AS Salary FROM role ORDER BY id"
-    )
-    .then(([roleData]) => {
-      console.table(roleData);
-    })
-    .catch();
+async function viewAllEmployees() {
+  const [employees] = await getAllEmployees();
+  console.table(employees);
+  startPrompt();
 }
 
 async function viewAllRoles() {
   console.log("Viewing All Roles");
-  await showRoles();
+  const [roles] = await getAllRoles();
+  console.table(roles);
   startPrompt();
 }
 
-showEmployees () {}
+async function addEmployee() {
+  //prompt first name, lastname, role(from list of roles), managerid(list out managers)
+  const [roles] = await getRoles();
+  console.log(roles);
+  const roleList = roles.map((role) => {
+    return role.title;
+  });
+  const [managers] = await getEmployees();
+  console.log(managers);
+  const managersList = managers.map((manager) => {
+    return manager.first_name + " " + manager.last_name;
+  });
 
+  managersList.unshift("Null");
 
+  const newEmployee = await inquirer.prompt([
+    {
+      name: "firstName",
+      type: "input",
+      message: "What is the employee's first name?",
+    },
+    {
+      name: "lastName",
+      type: "input",
+      message: "What is the employee's last name?",
+    },
+    {
+      name: "role",
+      type: "list",
+      message: "What is the employee's role?",
+      choices: roleList,
+    },
+    {
+      name: "manager",
+      type: "list",
+      message: "Who is the employee's manager?",
+      choices: managersList,
+    },
+  ]);
 
-viewAllEmployees() {}
+  let managerId;
+  if (newEmployee.manager !== "None") {
+    const managerData = managers.find(
+      (userInput) =>
+        newEmployee.manager === userInput.first_name + " " + userInput.last_name
+    );
+    console.log(managerData);
+    managerId = managerData.id;
+    console.log(managerId);
+  }
+
+  const roleData = roles.find(
+    (userInput) => newEmployee.role === userInput.title
+  );
+  console.log(roleData);
+  let roleId = roleData.id;
+
+  await addEmployeesToDb(
+    newEmployee.firstName,
+    newEmployee.lastName,
+    roleId,
+    managerId
+  );
+
+  console.log(`Added ${newEmployee.firstName} to the database.`);
+  // return connection.query(`INSERT INTO employee SET ?`, {first_name: first_name, last_name: last_name, role_id: role_id, manager_id: manager_id})
+  startPrompt();
+}
