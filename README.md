@@ -1,3 +1,5 @@
+![Screen Shot 2021-09-06 at 12 55 11 AM](https://user-images.githubusercontent.com/87394831/132173491-1ba9f26c-2748-42bb-910a-c9a22c842f1f.png)
+
 # Employee Tracker
 
 ## Description
@@ -10,10 +12,6 @@ This command line application allows users to store and organize basic informati
 
 [Usage](#usage)
 
-[Contributing](#contributing)
-
-[Tests](#tests)
-
 [Questions](#questions)
 
 ## Installation
@@ -24,9 +22,8 @@ npm install
 
 Be sure to update username, password, and preferred port for the SQL connection prior to starting application.
 
-## Test
-
-No tests at this time.
+## Video Demonstration
+Link: https://drive.google.com/file/d/1ShVoJDhrLo7IqTUZrp9U2CFwovTPtSnr/view
 
 ## Questions
 
