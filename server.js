@@ -1,4 +1,4 @@
-const cTable = require("console.table");
+const ctable = require("console.table");
 const mysql = require("mysql2");
 const inquirer = require("inquirer");
 const cfonts = require("cfonts");
@@ -23,6 +23,8 @@ const actionQuestions = [
   "Add an employee",
   "Update an employee role",
   "Delete an employee",
+  "Delete a role",
+  "Delete a department",
   "Exit",
 ];
 
@@ -87,6 +89,12 @@ function init() {
         break;
       case "Delete an employee":
         deleteEmployee();
+        break;
+      case "Delete a role":
+        deleteRole();
+        break;
+      case "Delete a department":
+        deleteDepartment();
         break;
       case "Exit":
         process.exit();
@@ -206,6 +214,18 @@ function init() {
       .query("DELETE FROM employee WHERE first_name = ?;", first_name);
   }
 
+  function deleteRoleDb(title) {
+    return connection
+      .promise()
+      .query("DELETE FROM role WHERE title = ?;", title);
+  }
+
+  function deleteDepartmentDb(name) {
+    return connection
+      .promise()
+      .query("DELETE FROM department WHERE name = ?;", name);
+  }
+
   async function addEmployee() {
     //prompt first name, lastname, role(from list of roles), managerid(list out managers)
     const [roles] = await getRoles();
@@ -247,7 +267,7 @@ function init() {
     ]);
 
     let managerId;
-    if (newEmployee.manager !== "None") {
+    if (newEmployee.manager !== "Null") {
       const managerData = managers.find(
         (userInput) =>
           newEmployee.manager ===
@@ -387,11 +407,55 @@ function init() {
         deletedEmployee.name ===
         userInput.first_name + " " + userInput.last_name
     );
-    console.log(employeeData.first_name);
     let employeeName = employeeData.first_name;
-    console.log(employeeName);
     await deleteEmployeeDb(employeeName);
     console.log(`Deleted ${deletedEmployee.name} from the database.`);
+    startPrompt();
+  }
+
+  async function deleteRole() {
+    const [roles] = await getRoles();
+    const rolesList = roles.map((role) => {
+      return role.title;
+    });
+
+    const deletedRole = await inquirer.prompt([
+      {
+        name: "name",
+        type: "list",
+        message: "Which role do you want to delete",
+        choices: rolesList,
+      },
+    ]);
+    const roleData = roles.find(
+      (userInput) => deletedRole.name === userInput.title
+    );
+    let roleName = roleData.title;
+    await deleteRoleDb(roleName);
+    console.log(`Deleted ${deletedRole.name} from the database.`);
+    startPrompt();
+  }
+
+  async function deleteDepartment() {
+    const [departments] = await getDepartments();
+    const departmentList = departments.map((department) => {
+      return department.name;
+    });
+
+    const deletedDepartment = await inquirer.prompt([
+      {
+        name: "name",
+        type: "list",
+        message: "Which department do you want to delete",
+        choices: departmentList,
+      },
+    ]);
+    const departmentData = departments.find(
+      (userInput) => deletedDepartment.name === userInput.name
+    );
+    let departmentName = departmentData.name;
+    await deleteDepartmentDb(departmentName);
+    console.log(`Deleted ${deletedDepartment.name} from the database.`);
     startPrompt();
   }
 }
